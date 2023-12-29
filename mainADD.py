@@ -67,7 +67,7 @@ train_generator = train_datagen.flow_from_directory(
 )
 
 validation_ds = tf.keras.utils.image_dataset_from_directory(
-    training_ds,
+    training_dir,
     validation_split=validation_split,
     subset="validation",
     seed=123,
