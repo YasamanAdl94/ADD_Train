@@ -46,19 +46,24 @@ training_ds = tf.keras.utils.image_dataset_from_directory(
 )
 
 
-def apply_audio_augmentation(image, label):
-    # Apply time masking
-    spectrogram = tfio.audio.time_mask(image, param=10)  # Adjust 'param' as needed
 
-    # Apply frequency masking
-    spectrogram = tfio.audio.freq_mask(image, param=10)  # Adjust 'param' as needed
-
-    return image, label
-
-
-augmented_training_ds = training_ds.map(
-    apply_audio_augmentation,
-    num_parallel_calls=tf.data.AUTOTUNE
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'  # You can explore more options in the documentation
+)
+train_generator = train_datagen.flow_from_directory(
+    training_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='binary',
+    shuffle=True,
+    seed=123
 )
 
 validation_ds = tf.keras.utils.image_dataset_from_directory(
