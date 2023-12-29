@@ -51,7 +51,7 @@ def apply_audio_augmentation(image, label):
     spectrogram = tfio.audio.time_mask(image, param=10)  # Adjust 'param' as needed
 
     # Apply frequency masking
-    spectrogram = tfio.audio.freq_mask(image, param=5)  # Adjust 'param' as needed
+    spectrogram = tfio.audio.freq_mask(image, param=10)  # Adjust 'param' as needed
 
     return image, label
 
@@ -62,7 +62,7 @@ augmented_training_ds = training_ds.map(
 )
 
 validation_ds = tf.keras.utils.image_dataset_from_directory(
-    training_dir,
+    training_ds,
     validation_split=validation_split,
     subset="validation",
     seed=123,
@@ -100,9 +100,10 @@ print("number of layers:", len(base_model.layers))
 for layer in base_model.layers[:-30]:  # Unfreeze the last 7 layers for example
     layer.trainable = False
 '''
-for layer in base_model.layers:
+for layer in base_model.layers[:-7]:
     # Unfreeze all layers for training from scratch
-    layer.trainable = True
+    layer.trainable = False
+print(len(layer.trainable))
 # Create your model on top of the base model
 model = keras.Sequential([
     base_model,
@@ -112,7 +113,7 @@ model = keras.Sequential([
 #model.layers[0].trainable = True
 
 # Define the optimizer with a specific learning rate
-optimizer = keras.optimizers.Adam(learning_rate=0.001)
+optimizer = keras.optimizers.Adam(learning_rate=0.0001)
 model.compile(
     optimizer=optimizer,
     loss="binary_crossentropy",
@@ -169,8 +170,15 @@ print("Test Accuracy", test_accuracy )
 
 def f1score(p, r):
     epsilon = 1e-7  # A small value to avoid division by zero
-    f1 = 2 * p * r / (p + r + epsilon)
-    return f1
+
+    # Handling potential division by zero cases
+    if p == 0 and r == 0:
+        return 0.0  # Return 0 when both precision and recall are zero
+    elif p + r == 0:
+        return 0.0  # Return 0 when the sum of precision and recall is zero
+    else:
+        f1 = 2 * p * r / (p + r + epsilon)
+        return f1
 
 print("-" * 70)
 print('\033[1m' + "Model metrics:" + '\033[0m')

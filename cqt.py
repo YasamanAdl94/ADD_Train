@@ -3,7 +3,7 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 
-input_folder = "W:\\Data\\ADD\\track1"
+input_folder = "W:\\Data\\ADD\\train"
 output_folder_fake = "W:\\workdir3\\CQT\\train\\fake"
 output_folder_real = "W:\\workdir3\\CQT\\train\\real"
 
@@ -50,7 +50,7 @@ def save_cqt_spectrogram(input_file, label):
     plt.close()
 
 # Process each audio file in the input folder
-label_file = "W:\\Data\\ADD\\label\\label1.txt"
+label_file = "W:\\Data\\ADD\\label\\train_label.txt"
 with open(label_file, 'r') as labels:
     label_data = labels.readlines()
 
