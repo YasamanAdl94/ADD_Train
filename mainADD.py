@@ -26,7 +26,7 @@ test_count = len(list(test_dir.glob('*/*.png')))
 train_count = len(list(training_dir.glob('*/*.png')))
 validation_split = test_count / train_count
 # Define parameters and create datasets
-batch_size = 100
+batch_size = 50
 epochs = 100
 img_height = 224
 img_width = 224
@@ -105,7 +105,7 @@ print("number of layers:", len(base_model.layers))
 for layer in base_model.layers[:-30]:  # Unfreeze the last 7 layers for example
     layer.trainable = False
 '''
-for layer in base_model.layers [:-20]:
+for layer in base_model.layers[:-20]:
     # Unfreeze all layers for training from scratch
     layer.trainable = False
 # Create your model on top of the base model
