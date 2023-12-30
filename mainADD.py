@@ -95,7 +95,7 @@ print("\nNames of", str(len(class_names)), "classes:", class_names)
 
 # Build the model
 base_model = keras.applications.ResNet50(
-    include_top=True,
+    include_top=False,
     weights=None,
     pooling="avg"
 )
@@ -105,20 +105,20 @@ print("number of layers:", len(base_model.layers))
 for layer in base_model.layers[:-30]:  # Unfreeze the last 7 layers for example
     layer.trainable = False
 '''
-for layer in base_model.layers[:-7]:
+for layer in base_model.layers [:-20]:
     # Unfreeze all layers for training from scratch
     layer.trainable = False
-print(len(layer.trainable))
 # Create your model on top of the base model
 model = keras.Sequential([
     base_model,
-    keras.layers.Dense(1, activation='sigmoid')
+    keras.layers.BatchNormalization(),
+    keras.layers.Dense(1, activation='relu', kernel_regularizer=regularizers.l2(0.01))
 ])
 #model.add(keras.layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.l1(0.01)))
 #model.layers[0].trainable = True
 
 # Define the optimizer with a specific learning rate
-optimizer = keras.optimizers.Adam(learning_rate=0.0001)
+optimizer = keras.optimizers.Adam(learning_rate=0.001)
 model.compile(
     optimizer=optimizer,
     loss="binary_crossentropy",
@@ -142,7 +142,7 @@ t0 = time.time()
 
 # Model training
 history = model.fit(
-    augmented_training_ds,
+    train_generator,
     steps_per_epoch=steps_per_epoch,
     validation_data=validation_ds,
     validation_steps=1,
@@ -198,7 +198,7 @@ tp, fp = results['true_positives'], results['false_positives']
 fn, tn = results['false_negatives'], results['true_negatives']
 cmx = np.array([[tp, fp], [fn, tn]], np.int32)
 
-model.save("W:/workdir/Models/model_ADD.h5")
+model.save("W:/workdir/Models/model_ADD3.h5")
 
 cmx_plot = sns.heatmap(
     cmx / np.sum(cmx),
@@ -233,6 +233,6 @@ plt.ylabel('Accuracy')
 plt.legend()
 
 plt.tight_layout()
-plt.title('Resnet50 all layers trained on ADD Dataset with no imagenet weights')
-plt.savefig("W:/workdir/Plots/plot10.png")
+plt.suptitle('Resnet50 Trained on ADD Dataset with 20 frozen layers- No ImageNet Weights', fontsize=16, y=1.02)
+plt.savefig("W:/workdir/Plots/plot_ADD1.png")
 plt.show()
