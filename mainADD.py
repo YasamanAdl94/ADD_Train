@@ -16,7 +16,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow_io as tfio  # Import tensorflow-io for signal processing
 from sklearn.model_selection import KFold
 import pandas as pd
-
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 
@@ -59,7 +59,7 @@ kf = KFold(n_splits=num_folds, shuffle=True, random_state=123)
 
 train_datagen = ImageDataGenerator(
     rescale=1. / 255,
-    rotation_range=10,
+    rotation_range=5,
     width_shift_range=0.1,
     height_shift_range=0.1,
     shear_range=0.1,
@@ -142,7 +142,7 @@ for layer in base_model.layers[:-100]:
 model = keras.Sequential([
     base_model,
     keras.layers.BatchNormalization(),
-    keras.layers.Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l2(0.01))
+    keras.layers.Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l1(0.01))
 ])
 #model.add(keras.layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.l1(0.01)))
 #model.layers[0].trainable = True
@@ -171,13 +171,20 @@ validation_steps = len(val_ds) // batch_size
 
 t0 = time.time()
 
+checkpoint_path = "W:/workdir/ADD_Models/best_model1.h5"
+checkpoint = ModelCheckpoint(checkpoint_path,
+                             monitor='val_binary_accuracy',
+                             verbose=1,
+                             save_best_only=True,
+                             mode='max')
 # Model training
 history = model.fit(
     train_ds,
     steps_per_epoch=steps_per_epoch,
     validation_data=val_ds,
     validation_steps=validation_steps,
-    epochs=epochs
+    epochs=epochs,
+    callbacks=[checkpoint]
 )
 
 # Access training loss and accuracy
@@ -203,7 +210,6 @@ results = model.evaluate(
 )
 test_accuracy = results['binary_accuracy']
 print("Test Accuracy", test_accuracy )
-model.save("W:/workdir/Models/model_FoR2.h5")
 
 plt.figure(figsize=(20, 10))
 
