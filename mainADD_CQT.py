@@ -20,9 +20,9 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 
-training_dir = pathlib.Path("W:\\workdir3\\train")
-val_dir = pathlib.Path("W:\\workdir3\\dev")
-test_dir = pathlib.Path("W:\\workdir3\\test")
+training_dir = pathlib.Path("W:\\workdir3\\CQT\\train")
+val_dir = pathlib.Path("W:\\workdir3\\CQT\\dev")
+test_dir = pathlib.Path("W:\\workdir3\\CQT\\test")
 
 train_count = len(list(training_dir.glob('*/*.png')))
 val_count = len(list(val_dir.glob('*/*.png')))
@@ -232,9 +232,9 @@ plt.ylabel('Accuracy')
 plt.legend()
 
 
-plt.suptitle('Resnet50 Trained on ADD Dataset ImageNet Weights and MelSpec features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
+plt.suptitle('Resnet50 Trained on ADD Dataset ImageNet Weights and CQT features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjusted spacing for the title
-plt.savefig("W:/workdir/Plots/plot_ADD_MelSpec1.png")
+plt.savefig("W:/workdir/Plots/plot_ADD_CQT1.png")
 plt.show()
 
 
@@ -276,7 +276,7 @@ cmx_plot = sns.heatmap(
     xticklabels=['Spoof (1)', 'Real (0)'],
     yticklabels=['Spoof (1)', 'Real (0)'])
 
-cmx_plot.set_title('ADD_MelSpec')
+cmx_plot.set_title('ADD_CQT')
 cmx_plot.set(xlabel="Actual", ylabel="Predicted")
 
 

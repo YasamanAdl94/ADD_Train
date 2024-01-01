@@ -3,9 +3,9 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 
-input_folder = "W:\\Data\\ADD\\track1"
-output_folder_fake = "W:\\workdir3\\test\\fake"
-output_folder_real = "W:\\workdir3\\test\\real"
+input_folder = "W:\\Data\\ADD\\dev"
+output_folder_fake = "W:\\workdir3\\Dev\\fake"
+output_folder_real = "W:\\workdir3\\Dev\\real"
 
 def pad(x, max_len=48000):
     x_len = x.shape[0]
@@ -50,7 +50,7 @@ def save_mel_spectrogram(input_file, label):
     plt.close()
 
 # Process each audio file in the input folder
-label_file = "W:\\Data\\ADD\\label\\label1.txt"
+label_file = "W:\\Data\\ADD\\label\\dev_label.txt"
 with open(label_file, 'r') as labels:
     label_data = labels.readlines()
 
