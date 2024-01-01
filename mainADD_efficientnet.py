@@ -17,6 +17,8 @@ import tensorflow_io as tfio  # Import tensorflow-io for signal processing
 from sklearn.model_selection import KFold
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.applications import EfficientNetB3
+
 
 
 
@@ -126,7 +128,7 @@ print("\nNames of", str(len(class_names)), "classes:", class_names)
 
 
 # Build the model
-base_model = keras.applications.ResNet50(
+base_model = EfficientNetB3(
     include_top=False,
     weights="imagenet",
     pooling="avg"
@@ -173,7 +175,7 @@ validation_steps = len(validation_ds) // batch_size
 
 t0 = time.time()
 
-checkpoint_path = "W:/workdir/ADD_Models/best_model1.h5"
+checkpoint_path = "W:/workdir/ADD_Models/best_model_effie.h5"
 checkpoint = ModelCheckpoint(checkpoint_path,
                              monitor='val_binary_accuracy',
                              verbose=1,
@@ -232,7 +234,7 @@ plt.ylabel('Accuracy')
 plt.legend()
 
 
-plt.suptitle('Resnet50 Trained on ADD Dataset ImageNet Weights and MelSpec features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
+plt.suptitle('Effi b3 Trained on ADD Dataset ImageNet Weights and MelSpec features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjusted spacing for the title
 plt.savefig("W:/workdir/Plots/plot_ADD_MelSpec1.png")
 plt.show()
