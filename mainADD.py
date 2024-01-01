@@ -36,7 +36,7 @@ img_height = 224
 img_width = 224
 
 
-print("\033[1mCreating training and validation datasets:\033[0m")
+print("\033[1mCreating training dataset:\033[0m")
 training_ds = tf.keras.utils.image_dataset_from_directory(
     training_dir,
     validation_split=None,
@@ -67,7 +67,7 @@ train_generator = train_datagen.flow_from_directory(
     shuffle=True,
     seed=123
 )
-
+print("\033[1mCreating validation dataset:\033[0m")
 validation_ds = tf.keras.utils.image_dataset_from_directory(
     val_dir,
     validation_split=None,
@@ -234,7 +234,7 @@ plt.legend()
 
 plt.suptitle('Resnet50 Trained on ADD Dataset ImageNet Weights and MelSpec features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjusted spacing for the title
-plt.savefig("W:/workdir/Plots/plot_ADD_MelSpec1.png")
+plt.savefig("W:/workdir/Plots/Resnet50_ADD_MelSpec1.png")
 plt.show()
 
 

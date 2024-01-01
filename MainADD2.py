@@ -17,8 +17,8 @@ import tensorflow_io as tfio  # Import tensorflow-io for signal processing
 from sklearn.model_selection import KFold
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.applications import EfficientNetB3
-
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.models import Model
 
 
 
@@ -37,8 +37,20 @@ epochs = 100
 img_height = 224
 img_width = 224
 
+input_shape = (img_height, img_width, 3)
 
 print("\033[1mCreating training dataset:\033[0m")
+
+train_datagen = ImageDataGenerator(
+    rescale=1. / 255,
+    rotation_range=5,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    shear_range=0.1,
+    zoom_range=0.1,
+    horizontal_flip=False,
+    fill_mode='nearest'  # You can explore more options in the documentation
+)
 training_ds = tf.keras.utils.image_dataset_from_directory(
     training_dir,
     validation_split=None,
@@ -49,18 +61,6 @@ training_ds = tf.keras.utils.image_dataset_from_directory(
     label_mode='binary',
     class_names=['fake', 'real']
 )
-
-
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest'  # You can explore more options in the documentation
-)
 train_generator = train_datagen.flow_from_directory(
     training_dir,
     target_size=(img_height, img_width),
@@ -69,10 +69,10 @@ train_generator = train_datagen.flow_from_directory(
     shuffle=True,
     seed=123
 )
-print("\033[1mCreating validation dataset:\033[0m")
-validation_ds = tf.keras.utils.image_dataset_from_directory(
+
+print("\n\033[1mCreating val dataset:\033[0m")
+val_ds = tf.keras.utils.image_dataset_from_directory(
     val_dir,
-    validation_split=None,
     seed=123,
     image_size=(img_height, img_width),
     batch_size=batch_size,
@@ -91,63 +91,27 @@ test_ds = tf.keras.utils.image_dataset_from_directory(
     label_mode='binary',
     class_names=['fake', 'real']
 )
-'''
-# Define the number of folds for cross-validation
-num_folds = 2
-
-# Get file paths for all images in the training directory
-all_image_paths = list(training_dir.glob('*/*.png'))
-np.random.shuffle(all_image_paths)
-
-# Split the data using KFold
-kf = KFold(n_splits=num_folds, shuffle=True, random_state=123)
-
-
-
-for fold, (train_index, val_index) in enumerate(kf.split(all_image_paths)):
-    train_files = np.array(all_image_paths)[train_index]
-    val_files = np.array(all_image_paths)[val_index]
-
-
-
-    # Creating DataFrames with file paths and labels (using class names as labels)
-    train_df = pd.DataFrame({
-        "filepaths": [str(filepath) for filepath in train_files],  # Convert file paths to strings
-        "labels": [str(filepath.parent.name) for filepath in train_files]  # Assuming class names are parent directory names
-    })
-
-    val_df = pd.DataFrame({
-        "filepaths": [str(filepath) for filepath in val_files],  # Convert file paths to strings
-        "labels": [str(filepath.parent.name) for filepath in val_files]  # Assuming class names are parent directory names
-    })
-'''
 
 # Define your class names explicitly
 class_names = training_ds.class_names
 print("\nNames of", str(len(class_names)), "classes:", class_names)
 
+model_input = Input(shape=input_shape)
+x = Conv2D(32, kernel_size=(3, 3), activation='relu')(model_input)
+x = MaxPooling2D(pool_size=(2, 2))(x)
+x = Conv2D(64, kernel_size=(3, 3), activation='relu')(x)
+x = MaxPooling2D(pool_size=(2, 2))(x)
+x = Flatten()(x)
 
-# Build the model
-base_model = EfficientNetB3(
-    include_top=False,
-    weights="imagenet",
-    pooling="avg"
-)
-print("number of layers:", len(base_model.layers))
-'''
-# Freeze layers except the last few
-for layer in base_model.layers[:-30]:  # Unfreeze the last 7 layers for example
-    layer.trainable = False
-'''
-for layer in base_model.layers[:50]:
-    # Unfreeze all layers for training from scratch
-    layer.trainable = False
-# Create your model on top of the base model
-model = keras.Sequential([
-    base_model,
-    keras.layers.BatchNormalization(),
-    keras.layers.Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l1(0.01))
-])
+# Add Dense layers with Dropout for regularization
+x = Dense(128, activation='relu')(x)
+x = Dropout(0.5)(x)
+model_output = Dense(1, activation='sigmoid')(x)  # Output layer with a single neuron for binary classification
+
+model = Model(inputs=model_input, outputs=model_output)
+
+
+
 #model.add(keras.layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.l1(0.01)))
 #model.layers[0].trainable = True
 
@@ -171,11 +135,11 @@ model.summary()
 
 # Model training
 steps_per_epoch = len(training_ds) / epochs
-validation_steps = len(validation_ds) // batch_size
+validation_steps = len(val_ds) // batch_size
 
 t0 = time.time()
 
-checkpoint_path = "W:/workdir/ADD_Models/best_model_effie.h5"
+checkpoint_path = "W:/workdir/ADD_Models/best_model2.h5"
 checkpoint = ModelCheckpoint(checkpoint_path,
                              monitor='val_binary_accuracy',
                              verbose=1,
@@ -185,7 +149,7 @@ checkpoint = ModelCheckpoint(checkpoint_path,
 history = model.fit(
     train_generator,
     steps_per_epoch=steps_per_epoch,
-    validation_data=validation_ds,
+    validation_data=val_ds,
     validation_steps=validation_steps,
     epochs=epochs,
     callbacks=[checkpoint]
@@ -207,37 +171,76 @@ print("----------------------------------------")
 t1 = time.time()
 dt = (t1 - t0)
 
+best_model = tf.keras.models.load_model(checkpoint_path)
 # Model evaluation
-results = model.evaluate(
+results = best_model.evaluate(
     test_ds,
     return_dict=True
 )
 test_accuracy = results['binary_accuracy']
 print("Test Accuracy", test_accuracy )
 
+tp, fp = results['true_positives'], results['false_positives']
+fn, tn = results['false_negatives'], results['true_negatives']
+cmx = np.array([[tp, fp], [fn, tn]], np.int32)
+
+
+
+cmx_plot = sns.heatmap(
+    cmx / np.sum(cmx),
+    cmap='Blues',
+    annot=True,
+    fmt=".1%",
+    linewidth=5,
+    cbar=False,
+    square=True,
+    xticklabels=['Spoof (1)', 'Real (0)'],
+    yticklabels=['Spoof (1)', 'Real (0)']
+)
+
+
+# Define the subplots for both loss/accuracy curves and the confusion matrix heatmap
+fig, axes = plt.subplots(1, 2, figsize=(18, 6))
+
+# Plotting training loss and accuracy
+axes[0].plot(train_loss, 'g', label='Training Loss')
+axes[0].plot(val_loss, 'r', label='Validation Loss')
+axes[0].set_xlabel('Epochs')
+axes[0].set_ylabel('Loss')
+axes[0].legend()
+axes[0].set_title('Loss and Accuracy')
+
+# Plotting confusion matrix heatmap
+sns.heatmap(
+    cmx / np.sum(cmx),
+    cmap='Blues',
+    annot=True,
+    fmt=".1%",
+    linewidth=5,
+    cbar=False,
+    square=True,
+    xticklabels=['Spoof (1)', 'Real (0)'],
+    yticklabels=['Spoof (1)', 'Real (0)'],
+    ax=axes[1]  # Assigning the heatmap to the second subplot
+)
+axes[1].set_title('Confusion Matrix')
+axes[1].set_xlabel('Actual')
+axes[1].set_ylabel('Predicted')
+
+# Setting the title for the entire figure
+plot_title = 'Basic CNN Trained on ADD Dataset'
+fig.suptitle(plot_title, fontsize=14, y=0.98)
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+# Generating the filename based on the plot title
+plot_filename = f"W:/workdir/Plots/{plot_title.replace(' ', '_')}.png"
+
+plt.savefig(plot_filename)
+plt.show()
+
 plt.figure(figsize=(12, 6))
 
-# Plotting training loss
-plt.subplot(1, 2, 1)
-plt.plot(train_loss, 'g', label='Training Loss')
-plt.plot(val_loss, 'r', label='Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
 
-# Plotting training accuracy
-plt.subplot(1, 2, 2)
-plt.plot(train_accuracy, 'g', label='Training Accuracy')
-plt.plot(val_accuracy, 'r', label='Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-
-
-plt.suptitle('Effi b3 Trained on ADD Dataset ImageNet Weights and MelSpec features,50 first layers frozen', fontsize=14, y=0.98)  # Adjusted title
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjusted spacing for the title
-plt.savefig("W:/workdir/Plots/Effib3_ADD_MelSpec1.png")
-plt.show()
 
 
 def f1score(p, r):
@@ -261,24 +264,8 @@ print("F1 Score: " + str(f1score(results['precision'], results['recall'])))
 print("Time to train: ", dt)
 print("-" * 70)
 
-tp, fp = results['true_positives'], results['false_positives']
-fn, tn = results['false_negatives'], results['true_negatives']
-cmx = np.array([[tp, fp], [fn, tn]], np.int32)
 
 
 
-cmx_plot = sns.heatmap(
-    cmx / np.sum(cmx),
-    cmap='Blues',
-    annot=True,
-    fmt=".1%",
-    linewidth=5,
-    cbar=False,
-    square=True,
-    xticklabels=['Spoof (1)', 'Real (0)'],
-    yticklabels=['Spoof (1)', 'Real (0)'])
-
-cmx_plot.set_title('ADD_MelSpec')
-cmx_plot.set(xlabel="Actual", ylabel="Predicted")
 
 
